@@ -80,7 +80,7 @@ SynthDef("marimbax",{
 
 	snd = SelectX.ar(1-crossfade,[sndA,sndB],0);
 	DetectSilence.ar(snd,0.001,doneAction:2);
-	snd = snd/2;
+	snd = snd/10;
 	Out.ar(out,snd);
 	Out.ar(reverbOut,snd*MouseX.kr());
 }).add;
@@ -143,7 +143,11 @@ x.set(\t_trig,1);
 ~play.(1,60,10);
 ~play.(1,50,30);
 
+
 (
+~dobass=0;
+~dochords=0;
+~onenote=50;
 r=Routine{
 	var chords=Pseq([
 		1,0,0,1,
@@ -151,27 +155,58 @@ r=Routine{
 		0,0,1,0,
 		0,1,0,0
 	],inf).asStream;
+	var bass=Pseq([
+		1,0,0,0,
+		0,1,0,0,
+		1,0,1,0,
+		1,0,0,0,
+		0,1,0,0,
+		0,1,0,0,
+		0,0,1,0,
+		1,0
+	],inf).asStream;
+	var bassnotes=Pseq([50-24,53-24,57-24,48-24,45-24,41-24,50-24,57-24],inf).asStream;
 	var notes=Pseq([
 		57,57,57,57,57,
 		58,58,58,58,58,
+		57,57,57,57,57,
+		62,62,62,62,62,
 	],inf).asStream;
 	var rr=Prand(
 		[-15,-10,-5,-4,-3,-2,-1,0,1,2,3,4,5,10,15],
 		inf).asStream;
 	var accent=Pseq([1,0,0,1,0,0,1,0,1,0,1,0,1,0,1,0],inf).asStream;
 	loop {
-		(1/6).wait;
-		~play.(1,50,30+(60*accent.next)+rr.next);
-		if (chords.next>0,{
-			~play.(2,50-12,120);
-			~play.(2,53,40);
-			~play.(2,notes.next,20);
+		(1/6.5).wait;
+		~play.(1,~onenote,30+(60*accent.next)+rr.next);
+		if (chords.next>0&&(~dochords>0),{
+			~play.(2,50-12,60+rr.next);
+			~play.(2,53,70+rr.next);
+			~play.(2,notes.next,50+rr.next);
+		});
+		if (bass.next>0&&(~dobass>0),{
+			~play.(3,bassnotes.next,60);
 		});
 	}
 }.play;
 )
 
+~dobass=0;
+~dochords=0;
+~onenote=50;
+
+~dochords=1;
+~onenote=53;
+~onenote=48;
+~onenote=45;
+~onenote=50;
+~onenote=41;
+
+
 r.stop;
+
+
+~play.(2,50-36,60);
 
 (
 ~play.(2,50-12,120);
@@ -183,4 +218,9 @@ r.stop;
 ~play.(2,50-12,120);
 ~play.(2,53,40);
 ~play.(2,58,20);
+)
+(
+~play.(2,50-12,120);
+~play.(2,53,40);
+~play.(2,62,50);
 )
