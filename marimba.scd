@@ -23,8 +23,22 @@
 )
 
 (
+SynthDef("mxfx",{
+	arg inDelay, inReverb, reverb=0.05, out, secondsPerBeat=1,delayBeats=4,delayFeedback=0.1,bufnumDelay;
+	var snd,snd2,y,z;
+	// reverb
+	snd2 = In.ar(inReverb,2);
+	snd2 = DelayN.ar(snd2, 0.03, 0.03);
+	snd2 = CombN.ar(snd2, 0.1, {Rand(0.01,0.099)}!32, 4);
+	snd2 = SplayAz.ar(2, snd2);
+	snd2 = LPF.ar(snd2, 1500);
+	5.do{snd2 = AllpassN.ar(snd2, 0.1, {Rand(0.01,0.099)}!2, 3)};
+	snd2 = LPF.ar(snd2, 1500);
+	snd2 = LeakDC.ar(snd2);
+	Out.ar(out,snd2);
+}).add;
 SynthDef("marimba",{
-	arg out=0,velocity=80,buf1,buf2,buf3,buf4,buf5,t_trig=1,rate=1;
+	arg out=0,outReverb,reverbSend=0,velocity=80,buf1,buf2,buf3,buf4,buf5,t_trig=1,rate=1;
 	var snd,snd1,snd2,snd3,snd4,snd5;
 	snd1=PlayBuf.ar(2,buf1,BufRateScale.kr(buf1)*rate,t_trig);
 	snd2=PlayBuf.ar(2,buf2,BufRateScale.kr(buf2)*rate,t_trig);
@@ -34,55 +48,54 @@ SynthDef("marimba",{
 	snd=SelectX.ar(Clip.kr(velocity/127*5,0,5),[snd1,snd2,snd3,snd4,snd5],0);
 	DetectSilence.ar(snd,doneAction:2);
 	Out.ar(out,snd);
+	Out.ar(outReverb,snd*reverbSend);
 }).add;
-)
-
-(
 SynthDef("marimbax",{
-	arg out=0,velocityMix=0.5,buf1,buf2,t_trig=1,rate=1;
+	arg out=0,reverbOut,reverbSend=0,
+	velocityMix=0.5,buf1,buf2,t_trig=1,rate=1;
 	var snd;
-	var sndA,sndA1,sndA2;
-	var sndB,sndB1,sndB2;
+	var sndA,sndA1,sndA2,bufA1,bufA2;
+	var sndB,sndB1,sndB2,bufB1,bufB2;
 	var switchA,switchB,crossfade;
 	var bufrate;
+
 
 	switchA=ToggleFF.kr(t_trig);
 	switchB=1-switchA;
 	crossfade=Lag.ar(K2A.ar(switchA),0.01);
+	bufA1=Latch.kr(buf1,switchA);
+	bufA2=Latch.kr(buf2,switchA);
+	bufB1=Latch.kr(buf1,switchB);
+	bufB2=Latch.kr(buf2,switchB);
 
 	rate=rate*BufRateScale.kr(buf1);
 
-	sndA1=PlayBuf.ar(2,buf1,rate,switchA);
-	sndA2=PlayBuf.ar(2,buf2,rate,switchA);
+	sndA1=PlayBuf.ar(2,bufA1,rate,switchA);
+	sndA2=PlayBuf.ar(2,bufA2,rate,switchA);
 	sndA=SelectX.ar(velocityMix,[sndA1,sndA2],0);
 
-	sndB1=PlayBuf.ar(2,buf1,rate,switchB);
-	sndB2=PlayBuf.ar(2,buf2,rate,switchB);
+	sndB1=PlayBuf.ar(2,bufB1,rate,switchB);
+	sndB2=PlayBuf.ar(2,bufB2,rate,switchB);
 	sndB=SelectX.ar(velocityMix,[sndB1,sndB2],0);
 
 	snd = SelectX.ar(1-crossfade,[sndA,sndB],0);
 	DetectSilence.ar(snd,0.001,doneAction:2);
-	Out.ar(out,snd/2);
+	snd = snd/2;
+	Out.ar(out,snd);
+	Out.ar(reverbOut,snd*MouseX.kr());
 }).add;
 )
 
 x=Synth("marimbax",[\rate,0.5,\velocity,32,\buf1,~marimbaSamples[0],\buf2,~marimbaSamples[1],\buf3,~marimbaSamples[2],\buf4,~marimbaSamples[3],\buf5,~marimbaSamples[4]]);
 x.set(\t_trig,1);
 
-127/5
-[12.7,25.4*1+12.7,25.4*2+12.7,25.4*3+12.7,25.4*4+12.7].indexIn(32)
-
-a=[-1,31.75,31.75*2,31.75*3,128];
-i=a.indexOfGreaterThan(120)-1;
-(120-a[i])/(a[i+1]-a[i])
-
-[-1,31.75,31.75*2,31.75*3,128].indexInBetween(120)
-
-128/5
 (
+~busReverb = Bus.audio(s,2);
+~fx = Synth.new("mxfx",[\out,0,\inReverb,~busReverb]);
 ~notesPlaying=Dictionary.new();
 ~play={
-	arg note,velocity=120;
+	arg instrument,note,velocity=120;
+	var name=instrument.asString++"-"++note.asString;
 	var rate=1;
 	var availableNotes=[24,36,48,60];
 	var sampleStart=availableNotes.indexIn(note);
@@ -104,30 +117,70 @@ i=a.indexOfGreaterThan(120)-1;
 	("sampleStart"+sampleStart).postln;
 
 
-	if (~notesPlaying.at(note).notNil,{
-		if (~notesPlaying.at(note).isRunning,{
+	if (~notesPlaying.at(name).notNil,{
+		if (~notesPlaying.at(name).isRunning,{
 			triggered=true;
-			~notesPlaying.at(note).set(\t_trig,1,\rate,rate,\velocity,velocity,
+			~notesPlaying.at(name).set(\t_trig,1,\rate,rate,\velocity,velocity,
 				\buf1,~marimbaSamples[velocityClosest+sampleStart],
 				\buf2,~marimbaSamples[1+velocityClosest+sampleStart]
 			);
 		});
 	});
 	if (triggered==false,{
-		~notesPlaying.put(note,Synth("marimbax",[\rate,rate,\velocity,velocity,
+		~notesPlaying.put(name,Synth("marimbax",[
+			\rate,rate,\velocity,velocity,
+			\reverbOut,~busReverb,
+			\reverbSend,0.3,
 			\buf1,~marimbaSamples[velocityClosest+sampleStart],
 			\buf2,~marimbaSamples[1+velocityClosest+sampleStart]
 		]).onFree({"freed".postln}));
-		NodeWatcher.register(~notesPlaying.at(note));
+		NodeWatcher.register(~notesPlaying.at(name));
 	});
 };
 )
 
-~play.(60,10);
-~play.(24,120);
+
+~play.(1,60,10);
+~play.(1,50,30);
 
 (
-~play.(50-12,120);
-~play.(53,40);
-~play.(57,20);
+r=Routine{
+	var chords=Pseq([
+		1,0,0,1,
+		0,0,1,0,
+		0,0,1,0,
+		0,1,0,0
+	],inf).asStream;
+	var notes=Pseq([
+		57,57,57,57,57,
+		58,58,58,58,58,
+	],inf).asStream;
+	var rr=Prand(
+		[-15,-10,-5,-4,-3,-2,-1,0,1,2,3,4,5,10,15],
+		inf).asStream;
+	var accent=Pseq([1,0,0,1,0,0,1,0,1,0,1,0,1,0,1,0],inf).asStream;
+	loop {
+		(1/6).wait;
+		~play.(1,50,30+(60*accent.next)+rr.next);
+		if (chords.next>0,{
+			~play.(2,50-12,120);
+			~play.(2,53,40);
+			~play.(2,notes.next,20);
+		});
+	}
+}.play;
+)
+
+r.stop;
+
+(
+~play.(2,50-12,120);
+~play.(2,53,40);
+~play.(2,57,20);
+)
+
+(
+~play.(2,50-12,120);
+~play.(2,53,40);
+~play.(2,58,20);
 )
