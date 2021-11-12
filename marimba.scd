@@ -1,25 +1,25 @@
 (
 ~marimbaSamples=Array.newClear(20);
-~marimbaSamples[0]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/Marimba - White beater - c1 p.wav");
-~marimbaSamples[1]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/Marimba - White beater - c1 mp.wav");
-~marimbaSamples[2]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/Marimba - White beater - c1 mf.wav");
-~marimbaSamples[3]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/Marimba - White beater - c1 f.wav");
-~marimbaSamples[4]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/Marimba - White beater - c1 ff.wav");
-~marimbaSamples[5]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/Marimba - White beater - c2 p.wav");
-~marimbaSamples[6]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/Marimba - White beater - c2 mp.wav");
-~marimbaSamples[7]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/Marimba - White beater - c2 mf.wav");
-~marimbaSamples[8]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/Marimba - White beater - c2 f.wav");
-~marimbaSamples[9]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/Marimba - White beater - c2 ff.wav");
-~marimbaSamples[10]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/Marimba - White beater - c3 p.wav");
-~marimbaSamples[11]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/Marimba - White beater - c3 mp.wav");
-~marimbaSamples[12]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/Marimba - White beater - c3 mf.wav");
-~marimbaSamples[13]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/Marimba - White beater - c3 f.wav");
-~marimbaSamples[14]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/Marimba - White beater - c3 ff.wav");
-~marimbaSamples[15]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/Marimba - White beater - c4 p.wav");
-~marimbaSamples[16]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/Marimba - White beater - c4 mp.wav");
-~marimbaSamples[17]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/Marimba - White beater - c4 mf.wav");
-~marimbaSamples[18]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/Marimba - White beater - c4 f.wav");
-~marimbaSamples[19]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/Marimba - White beater - c4 ff.wav");
+~marimbaSamples[0]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/data/Marimba - White beater - c1 p.wav");
+~marimbaSamples[1]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/data/Marimba - White beater - c1 mp.wav");
+~marimbaSamples[2]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/data/Marimba - White beater - c1 mf.wav");
+~marimbaSamples[3]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/data/Marimba - White beater - c1 f.wav");
+~marimbaSamples[4]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/data/Marimba - White beater - c1 ff.wav");
+~marimbaSamples[5]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/data/Marimba - White beater - c2 p.wav");
+~marimbaSamples[6]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/data/Marimba - White beater - c2 mp.wav");
+~marimbaSamples[7]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/data/Marimba - White beater - c2 mf.wav");
+~marimbaSamples[8]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/data/Marimba - White beater - c2 f.wav");
+~marimbaSamples[9]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/data/Marimba - White beater - c2 ff.wav");
+~marimbaSamples[10]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/data/Marimba - White beater - c3 p.wav");
+~marimbaSamples[11]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/data/Marimba - White beater - c3 mp.wav");
+~marimbaSamples[12]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/data/Marimba - White beater - c3 mf.wav");
+~marimbaSamples[13]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/data/Marimba - White beater - c3 f.wav");
+~marimbaSamples[14]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/data/Marimba - White beater - c3 ff.wav");
+~marimbaSamples[15]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/data/Marimba - White beater - c4 p.wav");
+~marimbaSamples[16]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/data/Marimba - White beater - c4 mp.wav");
+~marimbaSamples[17]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/data/Marimba - White beater - c4 mf.wav");
+~marimbaSamples[18]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/data/Marimba - White beater - c4 f.wav");
+~marimbaSamples[19]=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/data/Marimba - White beater - c4 ff.wav");
 )
 
 (
@@ -51,14 +51,15 @@ SynthDef("marimba",{
 	Out.ar(outReverb,snd*reverbSend);
 }).add;
 SynthDef("marimbax",{
-	arg out=0,reverbOut,reverbSend=0,
+	arg out=0,reverbOut,reverbSend=0,note=60,
 	velocityMix=0.5,buf1,buf2,t_trig=1,rate=1;
-	var snd;
+	var snd,env;
 	var sndA,sndA1,sndA2,bufA1,bufA2;
 	var sndB,sndB1,sndB2,bufB1,bufB2;
 	var switchA,switchB,crossfade;
 	var bufrate;
 
+	env = EnvGen.ar(Env.perc(0.01,2),t_trig,doneAction:2);
 
 	switchA=ToggleFF.kr(t_trig);
 	switchB=1-switchA;
@@ -70,17 +71,18 @@ SynthDef("marimbax",{
 
 	rate=rate*BufRateScale.kr(buf1);
 
-	sndA1=PlayBuf.ar(2,bufA1,rate,switchA);
-	sndA2=PlayBuf.ar(2,bufA2,rate,switchA);
+	sndA1=PlayBuf.ar(2,bufA1,rate,switchA,TRand.kr(0,0.1,switchA)*BufFrames.kr(bufA1));
+	sndA2=PlayBuf.ar(2,bufA2,rate,switchA,TRand.kr(0,0.1,switchA)*BufFrames.kr(bufA2));
 	sndA=SelectX.ar(velocityMix,[sndA1,sndA2],0);
 
-	sndB1=PlayBuf.ar(2,bufB1,rate,switchB);
-	sndB2=PlayBuf.ar(2,bufB2,rate,switchB);
+	sndB1=PlayBuf.ar(2,bufB1,rate,switchB,TRand.kr(0,0.1,switchB)*BufFrames.kr(bufB1));
+	sndB2=PlayBuf.ar(2,bufB2,rate,switchB,TRand.kr(0,0.1,switchB)*BufFrames.kr(bufB2));
 	sndB=SelectX.ar(velocityMix,[sndB1,sndB2],0);
 
 	snd = SelectX.ar(1-crossfade,[sndA,sndB],0);
 	DetectSilence.ar(snd,0.001,doneAction:2);
-	snd = snd/10;
+	snd = snd/10*env;
+	snd = Pan2.ar(snd,Clip.kr(LinLin.kr(note,50,65,-1,1),-1,1));
 	Out.ar(out,snd);
 	Out.ar(reverbOut,snd*MouseX.kr());
 }).add;
@@ -120,7 +122,7 @@ x.set(\t_trig,1);
 	if (~notesPlaying.at(name).notNil,{
 		if (~notesPlaying.at(name).isRunning,{
 			triggered=true;
-			~notesPlaying.at(name).set(\t_trig,1,\rate,rate,\velocity,velocity,
+			~notesPlaying.at(name).set(\t_trig,1,\rate,rate,\velocity,velocity,\note,note,
 				\buf1,~marimbaSamples[velocityClosest+sampleStart],
 				\buf2,~marimbaSamples[1+velocityClosest+sampleStart]
 			);
@@ -128,7 +130,7 @@ x.set(\t_trig,1);
 	});
 	if (triggered==false,{
 		~notesPlaying.put(name,Synth("marimbax",[
-			\rate,rate,\velocity,velocity,
+			\rate,rate,\velocity,velocity,\note,note,
 			\reverbOut,~busReverb,
 			\reverbSend,0.3,
 			\buf1,~marimbaSamples[velocityClosest+sampleStart],
@@ -140,8 +142,8 @@ x.set(\t_trig,1);
 )
 
 
-~play.(1,60,10);
-~play.(1,50,30);
+~play.(1,60,120);
+~play.(1,60,30);
 
 
 (
@@ -191,7 +193,7 @@ r=Routine{
 }.play;
 )
 
-~dobass=0;
+~dobass=1;
 ~dochords=0;
 ~onenote=50;
 
