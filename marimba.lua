@@ -127,10 +127,10 @@ function enc(k,d)
     if k==1 then
       par_num=par_num+d 
       if par_num < 1 then 
-          par_num=par_num+3
+          par_num=par_num+4
       end
-      if par_num > 3 then 
-          par_num=((par_num-1)%3)+1
+      if par_num > 4 then 
+          par_num=((par_num-1)%4)+1
       end
     elseif k==2 then
         if par_num==1 then 
