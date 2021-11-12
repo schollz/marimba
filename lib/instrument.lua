@@ -31,6 +31,15 @@ function Instrument:set(i,part)
     self:refresh()
 end
 
+function Instrument:get_sequence()
+    local t={}
+    for _, part in ipairs(self.parts) do
+        local notes=part:get_notes()
+        table.insert(t,notes[1])
+    end
+    return t
+end
+
 function Instrument:refresh()
     local t={}
     for parti, part in ipairs(self.parts) do
@@ -41,6 +50,7 @@ function Instrument:refresh()
     end
     self.seq=t
 end
+
 
 function Instrument:emit(beat)
     if #self.seq==0 then 
