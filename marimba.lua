@@ -48,15 +48,28 @@ mallet_strokes={
 }
 
 function init()
+  -- initialize the marimba menu
+  -- local marimba_instruments={
+  --   {name="soprano",root=60},
+  --   {name="tenor",root=48},
+  --   {name="baritone",root=36},
+  --   {name="bass",root=24},
+  -- }
+  -- for _, ins in ipairs(marimba_instruments) do 
+  --   params:add_group(ins.name,1)
+  --   params:add()
+  -- end
+  -- params:add_group()
+
   -- initialize the marimba
   marimbas={}
-  marimbas[sel_instrument]=Instrument:new({root=36})
+  marimbas[sel_instrument]=Instrument:new({id=1,root=36,name="tenor"})
   marimbas[sel_instrument]:add(Part:new{stroke=16,note=9,count=1,interval=0})
-  marimbas[sel_instrument]:add(Part:new{stroke=16,note=12,count=1,interval=0})
-  marimbas[sel_instrument]:add(Part:new{stroke=16,note=7,count=1,interval=0})
-  marimbas[sel_instrument]:add(Part:new{stroke=16,note=8,count=1,interval=0})
-  marimbas[sel_instrument]:add(Part:new{stroke=16,note=9,count=1,interval=0})
-  marimbas[sel_instrument]:add(Part:new{stroke=16,note=3,count=1,interval=0})
+  -- marimbas[sel_instrument]:add(Part:new{stroke=16,note=12,count=1,interval=0})
+  -- marimbas[sel_instrument]:add(Part:new{stroke=16,note=7,count=1,interval=0})
+  -- marimbas[sel_instrument]:add(Part:new{stroke=16,note=8,count=1,interval=0})
+  -- marimbas[sel_instrument]:add(Part:new{stroke=16,note=9,count=1,interval=0})
+  -- marimbas[sel_instrument]:add(Part:new{stroke=16,note=3,count=1,interval=0})
 --   marimbas[sel_instrument]:add(Part:new{stroke=16,note=9,count=2,interval=3})
 --   marimbas[sel_instrument]:add(Part:new{stroke=2,note=10})
 --   marimbas[sel_instrument]:add(Part:new{stroke=1,note=12,count=4})
@@ -64,7 +77,7 @@ function init()
 --   marimbas[sel_instrument]:add(Part:new{stroke=12,note=12,count=2})
   marimbas[sel_instrument]:refresh()
 
-  marimbas[2]=Instrument:new({root=24})
+  marimbas[2]=Instrument:new({id=2,root=24,name="soprano"})
   marimbas[2]:add(Part:new{stroke=15,note=9,count=1,interval=0})
   marimbas[2]:add(Part:new{stroke=14,note=6,count=2,interval=0})
   marimbas[2]:refresh()
@@ -81,7 +94,7 @@ function init()
         end,
     }
   end
-  lattice:hard_restart()
+  -- lattice:hard_restart()
 
   -- initialize metro for updating screen
   timer=metro.init()
@@ -105,60 +118,53 @@ function key(k,z)
   if shift then
     if k==1 then
     elseif k==2 then
-    elseif k==3 then
-    end
-  else
-    if k==1 then
-    elseif k==2 then
         lattice:stop()
     elseif k==3 then
         lattice:hard_restart()
     end
+  else
+    if k==1 then
+    elseif k==2 then
+        change_part(-1)
+    elseif k==3 then
+        change_part(1)
+    end
   end
+end
+
+function change_part(d)
+    local pnum=util.clamp(sel_part+d,1,#marimbas[sel_instrument].parts+1)
+    if pnum==#marimbas[sel_instrument].parts+1 then 
+        if marimbas[sel_instrument].parts[sel_part].count>0 then
+            local p=marimbas[sel_instrument].parts[pnum-1]
+            marimbas[sel_instrument]:add(Part:new{count=0,note=p.note,interval=p.interval,stroke=p.stroke})
+        else
+            pnum=pnum-1
+        end
+    end
+    sel_part=pnum
 end
 
 function enc(k,d)
   if shift then
     if k==1 then
     elseif k==2 then
-    else
+        marimbas[sel_instrument].parts[sel_part].stroke=util.clamp(marimbas[sel_instrument].parts[sel_part].stroke+d,1,#mallet_strokes)
+        marimbas[sel_instrument]:refresh()
+    elseif k==3 then 
+        marimbas[sel_instrument].parts[sel_part].interval=util.clamp(marimbas[sel_instrument].parts[sel_part].interval+d,0,12)
+        marimbas[sel_instrument]:refresh()
     end
   else
     if k==1 then
-      par_num=par_num+d 
-      if par_num < 1 then 
-          par_num=par_num+4
-      end
-      if par_num > 4 then 
-          par_num=((par_num-1)%4)+1
-      end
+        sel_instrument=util.wrap(sel_instrument+d,1,#marimbas)
+        sel_part=1
     elseif k==2 then
-        if par_num==1 then 
-            sel_instrument=util.wrap(sel_instrument+d,1,#marimbas)
-        elseif par_num==2 then 
-            marimbas[sel_instrument].parts[sel_part].note=util.wrap(marimbas[sel_instrument].parts[sel_part].note+d,1,17)
-            marimbas[sel_instrument]:refresh()
-        elseif par_num==3 then 
-            marimbas[sel_instrument].parts[sel_part].stroke=util.clamp(marimbas[sel_instrument].parts[sel_part].stroke+d,1,#mallet_strokes)
-            marimbas[sel_instrument]:refresh()
-        end
+        marimbas[sel_instrument].parts[sel_part].count=util.clamp(marimbas[sel_instrument].parts[sel_part].count+d,0,16)
+        marimbas[sel_instrument]:refresh()
     elseif k==3 then 
-        if par_num==1 then 
-            local pnum=util.clamp(sel_part+d,1,#marimbas[sel_instrument].parts+1)
-            if pnum==#marimbas[sel_instrument].parts+1 then 
-                local p=marimbas[sel_instrument].parts[pnum-1]
-                marimbas[sel_instrument]:add(Part:new{count=0,note=p.note,interval=p.interval,stroke=p.stroke})
-            end
-            sel_part=pnum
-        elseif par_num==2 then 
-            marimbas[sel_instrument].parts[sel_part].interval=util.clamp(marimbas[sel_instrument].parts[sel_part].interval+d,0,12)
-            marimbas[sel_instrument]:refresh()
-        elseif par_num==3 then 
-            marimbas[sel_instrument].parts[sel_part].count=util.clamp(marimbas[sel_instrument].parts[sel_part].count+d,0,16)
-            marimbas[sel_instrument]:refresh()
-        elseif par_num==4 then 
-            note_selected=util.wrap(note_selected+d,1,17)
-        end
+        marimbas[sel_instrument].parts[sel_part].note=util.wrap(marimbas[sel_instrument].parts[sel_part].note+d,1,17)
+        marimbas[sel_instrument]:refresh()
     end
   end
 end
@@ -221,21 +227,11 @@ function draw_marimba()
                 screen.fill()
             end
         end
-        if par_num==2 then 
-            if marimbas[sel_instrument].parts[sel_part].note==i
-                or marimbas[sel_instrument].parts[sel_part].note+marimbas[sel_instrument].parts[sel_part].interval==i then 
-                screen.rect(x,y,width,height)
-                screen.level(15)
-                screen.stroke()
-            end
-        end
-        if par_num==4 then 
-            if note_selected==i
-                or marimbas[sel_instrument].parts[sel_part].note+marimbas[sel_instrument].parts[sel_part].interval==i then 
-                screen.rect(x,y,width,height)
-                screen.level(15)
-                screen.stroke()
-            end
+        if marimbas[sel_instrument].parts[sel_part].note==i
+            or marimbas[sel_instrument].parts[sel_part].note+marimbas[sel_instrument].parts[sel_part].interval==i then 
+            screen.rect(x,y,width,height)
+            screen.level(15)
+            screen.stroke()
         end
         table.insert(top_positions,{x+width/2,y+height})
         table.insert(bot_positions,{x+width/2,y})
@@ -255,7 +251,7 @@ function draw_marimba()
                 draw_curve(top_positions[p1],top_positions[p2],top_num,level)
                 top_num=top_num+10
                 level=level-1
-            else
+            elseif p1<p2 then 
                 draw_curve(bot_positions[p1],bot_positions[p2],bot_num,level)
                 bot_num=bot_num+10
                 level=level-1
