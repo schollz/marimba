@@ -9,8 +9,8 @@
 --
 -- ?
 
-if not string.find(package.cpath,"/home/we/dust/code/o-o-o/lib/") then
-  package.cpath=package.cpath..";/home/we/dust/code/o-o-o/lib/?.so"
+if not string.find(package.cpath,"/home/we/dust/code/marimba/lib/") then
+  package.cpath=package.cpath..";/home/we/dust/code/marimba/lib/?.so"
 end
 json=require("cjson")
 
