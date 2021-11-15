@@ -9,9 +9,15 @@
 --
 -- ?
 
+if not string.find(package.cpath,"/home/we/dust/code/o-o-o/lib/") then
+  package.cpath=package.cpath..";/home/we/dust/code/o-o-o/lib/?.so"
+end
+json=require("cjson")
+
 Lattice = require("lattice")
 Part=include("marimba/lib/part")
 Instrument=include("marimba/lib/instrument")
+
 
 engine.name="Marimba"
 local shift=false
@@ -102,6 +108,34 @@ function init()
   timer.count=-1
   timer.event=update_screen
   timer:start()
+
+  -- add callbacks for reading/writing files
+  params.action_write=function(filename,name)
+    local t={} 
+    for i,v in ipairs(marimbas) do
+        table.insert(t,v:dump())
+    end
+    local file=io.open(filename..".json","w+")
+    io.output(file)
+    io.write(json.encode(t))
+    io.close(file)
+  end
+  params.action_read=function(filename)
+    local f=io.open(filename..".json","rb")
+    local content=f:read("*all")
+    f:close()
+    local d=json.decode(content)
+    if d==nil then
+        do return end 
+    end 
+    marimbas={}
+    for i,v in ipairs(d) do 
+        local ins=Instrument:new()
+        ins:load(v)
+        ins:refresh()
+        table.insert(marimbas,ins)
+    end 
+  end
 end
 
 function update_screen()

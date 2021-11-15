@@ -21,6 +21,35 @@ function Instrument:new(o)
   return o
 end
 
+local to_dump={"id","root","name"}
+
+function Instrument:dump()
+    local t={}
+    for _,k in ipairs(to_dump) do
+        t[k]=self[k]
+    end
+    t.parts={}
+    for i,v in ipairs(self.parts) do 
+        t.parts[i]=v:dump()
+    end
+    return json.encode(t)
+end
+
+function Instrument:load(s)
+    local d=json.decode(s)
+    if d==nil then 
+        do return end 
+    end
+    self.parts={}
+    for k,v in pairs(to_dump) do 
+        self[k]=v
+    end
+    for i,v in ipairs(d.parts) do 
+        self.parts[i]=Part:new()
+        self.parts[i]:load(v)        
+    end
+end
+
 function Instrument:add(part)
     table.insert(self.parts,part)
     self:refresh()

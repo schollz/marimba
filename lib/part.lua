@@ -14,6 +14,25 @@ function Part:new(o)
   return o
 end
 
+function Part:dump()
+    local t={}
+    local to_dump={"swing","enabled","stroke","note","count","interval"}
+    for _, k in ipairs(to_dump) do 
+        t[k]=self[k]
+    end    
+    return json.encode(t)
+end
+
+function Part:load(s)
+    local d=json.decode(s)
+    if d==nil then 
+        do return end 
+    end
+    for k,v in pairs(d) do
+        self[k]=v
+    end
+end
+
 function Part:get_stroke()
     return mallet_strokes[self.stroke]
 end
