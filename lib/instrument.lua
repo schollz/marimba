@@ -108,6 +108,7 @@ function Instrument:emit(beat)
             table.insert(self.note_last,k)
         end
     end
+    return note,velocity
 end
 
 return Instrument

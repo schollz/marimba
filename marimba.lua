@@ -21,8 +21,8 @@ Instrument=include("marimba/lib/instrument")
 
 engine.name="Marimba"
 local shift=false
-par_num=4
-note_selected=1
+local is_playing = false
+note_selected=9
 sel_instrument=1
 sel_part=1
 mallet_strokes={
@@ -53,50 +53,61 @@ mallet_strokes={
     "xoxoxoxo",
 }
 
+midi_conn={}
+
 function init()
-  -- initialize the marimba menu
-  -- local marimba_instruments={
-  --   {name="soprano",root=60},
-  --   {name="tenor",root=48},
-  --   {name="baritone",root=36},
-  --   {name="bass",root=24},
-  -- }
-  -- for _, ins in ipairs(marimba_instruments) do 
-  --   params:add_group(ins.name,1)
-  --   params:add()
-  -- end
-  -- params:add_group()
+  local marimba_types={
+    {name="soprano",root=60},
+    {name="soprano ii",root=60},
+    {name="tenor",root=48},
+    {name="baritone",root=36},
+    {name="bass",root=24},
+  }
+
+  -- setup midi
+  local midi_devices={"none"}
+  midi_conn={"none"} -- needs to be global
+  for _,dev in pairs(midi.devices) do
+    if dev.port~=nil then
+      table.insert(midi_devices,dev.name)
+      table.insert(midi_conn,midi.connect(dev.port))
+    end
+  end
+  for i,_ in ipairs(marimba_types) do
+      params:add_option(i.."midi_out","midi out",midi_devices)
+      params:add{type="control",id=i.."midi_ch",name="midi out ch",controlspec=controlspec.new(1,16,'lin',1,1,'',1/16)}
+  end
 
   -- initialize the marimba
   marimbas={}
-  marimbas[sel_instrument]=Instrument:new({id=1,root=36,name="tenor"})
-  marimbas[sel_instrument]:add(Part:new{stroke=16,note=9,count=1,interval=0})
-  -- marimbas[sel_instrument]:add(Part:new{stroke=16,note=12,count=1,interval=0})
-  -- marimbas[sel_instrument]:add(Part:new{stroke=16,note=7,count=1,interval=0})
-  -- marimbas[sel_instrument]:add(Part:new{stroke=16,note=8,count=1,interval=0})
-  -- marimbas[sel_instrument]:add(Part:new{stroke=16,note=9,count=1,interval=0})
-  -- marimbas[sel_instrument]:add(Part:new{stroke=16,note=3,count=1,interval=0})
---   marimbas[sel_instrument]:add(Part:new{stroke=16,note=9,count=2,interval=3})
---   marimbas[sel_instrument]:add(Part:new{stroke=2,note=10})
---   marimbas[sel_instrument]:add(Part:new{stroke=1,note=12,count=4})
---   marimbas[sel_instrument]:add(Part:new{stroke=11,note=11,count=1})
---   marimbas[sel_instrument]:add(Part:new{stroke=12,note=12,count=2})
-  marimbas[sel_instrument]:refresh()
-
-  marimbas[2]=Instrument:new({id=2,root=24,name="soprano"})
-  marimbas[2]:add(Part:new{stroke=15,note=9,count=1,interval=0})
-  marimbas[2]:add(Part:new{stroke=14,note=6,count=2,interval=0})
-  marimbas[2]:refresh()
+  for i,v in ipairs(marimba_types) do 
+    local m=Instrument:new({id=i,root=v.root,name=v.name})
+    m:add(Part:new({stroke=16,note=9,count=0}))
+    table.insert(marimbas,m)
+  end
   
   -- initialize the lattice
   lattice = Lattice:new()
   patterns={}
   for i=1,#marimbas do 
+    local last_note_on=nil
     patterns[i]=lattice:new_pattern{
         division=1/16,
         action=function(t)
+            if last_note_on~=nil then 
+                local conn=midi_conn[params:get(i.."midi_out")]
+                conn:note_off(note)
+                last_note_on=nil
+            end
             local beat=t/24+1
-            marimbas[i]:emit(beat)
+            local note,velocity=marimbas[i]:emit(beat)
+            if note~=nil and velocity~=nil then 
+              if params:get(i.."midi_out")>1 then
+                local conn=midi_conn[params:get(i.."midi_out")]
+                conn:note_on(note,velocity,math.floor(params:get(i.."midi_ch")))
+                last_note_on=note
+              end
+            end
         end,
     }
   end
@@ -154,7 +165,12 @@ function key(k,z)
     elseif k==2 then
         lattice:stop()
     elseif k==3 then
-        lattice:hard_restart()
+        if not is_playing then 
+            lattice:hard_restart()
+        else
+            lattice:stop()
+        end
+        is_playing=not is_playing
     end
   else
     if k==1 then
@@ -214,26 +230,21 @@ function draw_part()
     if marimbas[sel_instrument].parts[sel_part]==nil then 
         do return end 
     end
-    screen.level(par_num==1 and 15 or 5)
+    screen.level(15)
     screen.move(5,5)
-    screen.text("instrument "..sel_instrument)
-    screen.level(par_num==2 and 15 or 5)
+    screen.text(marimbas[sel_instrument].name)
     screen.move(5,14)
     screen.text("note: "..marimbas[sel_instrument].parts[sel_part].note)  
-    screen.level(par_num==3 and 15 or 5)
     screen.move(5,23)
     screen.text(""..marimbas[sel_instrument].parts[sel_part]:get_stroke())  
     local note_names=""
     for _, note in ipairs(marimbas[sel_instrument].parts[sel_part]:get_notes()) do 
       note_names=note_names..note.." "
     end
-    screen.level(par_num==1 and 15 or 5)
     screen.move(126,5)
     screen.text_right("part "..sel_part)
-    screen.level(par_num==2 and 15 or 5)
     screen.move(126,14)
     screen.text_right("interval: "..marimbas[sel_instrument].parts[sel_part].interval)  
-    screen.level(par_num==3 and 15 or 5)
     screen.move(126,23)
     screen.text_right("x"..marimbas[sel_instrument].parts[sel_part].count)
     screen.move(126,64)
