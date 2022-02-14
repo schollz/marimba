@@ -41,36 +41,22 @@ Engine_Marimba : CroneEngine {
 		context.server.sync;
 
         SynthDef("marimbax",{
-            arg out=0,reverbOut,reverbSend=0,
+            arg out=0,reverbOut,reverbSend=0,fade_trig=0,fade_time=0.1,
             velocityMix=0.5,buf1,buf2,t_trig=1,rate=1;
             var snd;
             var sndA,sndA1,sndA2,bufA1,bufA2;
             var sndB,sndB1,sndB2,bufB1,bufB2;
             var switchA,switchB,crossfade;
-            var bufrate;
 
-            switchA=ToggleFF.kr(t_trig);
-            switchB=1-switchA;
-            crossfade=Lag.ar(K2A.ar(switchA),0.01);
+            rate=rate*BufRateScale.ir(buf1);
 
-            bufA1=Latch.kr(buf1,switchA);
-            bufA2=Latch.kr(buf2,switchA);
-            bufB1=Latch.kr(buf1,switchB);
-            bufB2=Latch.kr(buf2,switchB);
+            sndA1=PlayBuf.ar(2,buf1,rate,switchA,doneAction:2);
+            sndA2=PlayBuf.ar(2,buf2,rate,switchA,doneAction:2);
+            snd=SelectX.ar(velocityMix,[sndA1,sndA2],0);
 
-            rate=rate*BufRateScale.kr(buf1);
-
-            sndA1=PlayBuf.ar(2,bufA1,rate,switchA);
-            sndA2=PlayBuf.ar(2,bufA2,rate,switchA);
-            sndA=SelectX.ar(velocityMix,[sndA1,sndA2],0);
-
-            sndB1=PlayBuf.ar(2,bufB1,rate,switchB);
-            sndB2=PlayBuf.ar(2,bufB2,rate,switchB);
-            sndB=SelectX.ar(velocityMix,[sndB1,sndB2],0);
-
-            snd = SelectX.ar(1-crossfade,[sndA,sndB],0);
             DetectSilence.ar(snd,0.001,doneAction:2);
             snd = snd/10;
+            snd=snd*EnvGen.ar(Env.new([1,0],[fade_time]),fade_trig,doneAction:2);
             Out.ar(out,snd);
         }).add;
 
@@ -86,8 +72,8 @@ Engine_Marimba : CroneEngine {
             var availableVelocities=[-1,128/5,128/5*2,128/5*3,128/5*4,128];
             var velocityClosest=availableVelocities.indexOfGreaterThan(velocity)-1;
             var velocityMix=(velocity-availableVelocities[velocityClosest])/(availableVelocities[velocityClosest+1]-availableVelocities[velocityClosest]);
-            ("velocityClosest"+velocityClosest).postln;
-            ("velocityMix"+velocityMix).postln;
+            // ("velocityClosest"+velocityClosest).postln;
+            // ("velocityMix"+velocityMix).postln;
 
             if (noteDifference<0,{
                 rate = rate/2;
@@ -99,21 +85,15 @@ Engine_Marimba : CroneEngine {
 
             if (marimbaPlaying.at(name).notNil,{
                 if (marimbaPlaying.at(name).isRunning,{
-                    triggered=true;
-                    marimbaPlaying.at(name).set(\t_trig,1,\rate,rate,\velocity,velocity,
-                        \buf1,marimbaSamples[velocityClosest+sampleStart],
-                        \buf2,marimbaSamples[1+velocityClosest+sampleStart]
-                    );
+                    marimbaPlaying.at(name).set(\fade_trig,1);
                 });
             });
-            if (triggered==false,{
-                marimbaPlaying.put(name,Synth("marimbax",[
-                    \rate,rate,\velocity,velocity,
-                    \buf1,marimbaSamples[velocityClosest+sampleStart],
-                    \buf2,marimbaSamples[1+velocityClosest+sampleStart]
-                ]).onFree({"freed".postln}));
-                NodeWatcher.register(marimbaPlaying.at(name));
-            });
+            marimbaPlaying.put(name,Synth("marimbax",[
+                \rate,rate,\velocityMix,velocityMix,
+                \buf1,marimbaSamples[velocityClosest+sampleStart],
+                \buf2,marimbaSamples[1+velocityClosest+sampleStart]
+            ]).onFree({"freed".postln}));
+            NodeWatcher.register(marimbaPlaying.at(name));
         };
 
 		this.addCommand("play","iff", { arg msg;
