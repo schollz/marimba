@@ -44,14 +44,12 @@ Engine_Marimba : CroneEngine {
             arg out=0,reverbOut,reverbSend=0,fade_trig=0,fade_time=0.1,
             velocityMix=0.5,buf1,buf2,t_trig=1,rate=1;
             var snd;
-            var sndA,sndA1,sndA2,bufA1,bufA2;
-            var sndB,sndB1,sndB2,bufB1,bufB2;
-            var switchA,switchB,crossfade;
+            var sndA,sndA1,sndA2;
 
             rate=rate*BufRateScale.ir(buf1);
 
-            sndA1=PlayBuf.ar(2,buf1,rate,switchA,doneAction:2);
-            sndA2=PlayBuf.ar(2,buf2,rate,switchA,doneAction:2);
+            sndA1=PlayBuf.ar(2,buf1,rate,doneAction:2);
+            sndA2=PlayBuf.ar(2,buf2,rate,doneAction:2);
             snd=SelectX.ar(velocityMix,[sndA1,sndA2],0);
 
             DetectSilence.ar(snd,0.001,doneAction:2);
@@ -81,7 +79,7 @@ Engine_Marimba : CroneEngine {
             });
             rate = rate * ratios[noteDifference];
             sampleStart = sampleStart * 5;
-            ("sampleStart"+sampleStart).postln;
+            // ("sampleStart"+sampleStart).postln;
 
             if (marimbaPlaying.at(name).notNil,{
                 if (marimbaPlaying.at(name).isRunning,{
@@ -92,7 +90,7 @@ Engine_Marimba : CroneEngine {
                 \rate,rate,\velocityMix,velocityMix,
                 \buf1,marimbaSamples[velocityClosest+sampleStart],
                 \buf2,marimbaSamples[1+velocityClosest+sampleStart]
-            ]).onFree({"freed".postln}));
+            ]));//.onFree({"freed".postln}));
             NodeWatcher.register(marimbaPlaying.at(name));
         };
 
